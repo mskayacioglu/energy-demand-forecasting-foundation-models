@@ -1,0 +1,38 @@
+# --- Python environments ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- Python caches / build ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Experiment tracking / logs ---
+mlruns/
+wandb/
+outputs/
+*.log
+
+# --- Derived / regenerable data artifacts (raw .tsf is versioned) ---
+data/interim/*
+!data/interim/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# --- Generated figures ---
+reports/figures/*
+!reports/figures/.gitkeep
