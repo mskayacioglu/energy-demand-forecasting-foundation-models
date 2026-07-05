@@ -1,0 +1,7 @@
+{
+  // Notebooks are exploration-only (see ROADMAP.md). Pylance's pandas/seaborn stubs raise
+  // many false positives on idiomatic EDA code (e.g. DatetimeIndex.hour typed as Index[Any],
+  // sns.histplot(series), MSTL.seasonal["seasonal_24"]). Suppress diagnostics for notebooks
+  // while still resolving imports; keep full type-checking for src/ code added later.
+  "python.analysis.ignore": ["**/notebooks/**"]
+}
