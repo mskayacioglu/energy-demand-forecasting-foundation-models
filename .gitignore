@@ -36,3 +36,9 @@ data/processed/*
 # --- Generated figures ---
 reports/figures/*
 !reports/figures/.gitkeep
+
+# --- Model artifacts & regenerable forecasts (metric tables under results/metrics are versioned) ---
+models/*
+!models/.gitkeep
+results/forecasts/*
+!results/forecasts/.gitkeep
