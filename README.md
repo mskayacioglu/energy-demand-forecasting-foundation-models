@@ -1,34 +1,85 @@
-# Energy Demand Forecasting — Foundation Models
+# Energy Demand Forecasting — Foundation Models vs. Strong Baselines
 
-Saatlik elektrik talebi (Monash `electricity_hourly`: 321 seri × 3 yıl) üzerinde uçtan uca
-benchmark: klasik modeller, LightGBM, PatchTST ve Chronos-Bolt (zero-shot + fine-tuned), tek donuk
-değerlendirme protokolüyle (5 rolling-origin haftalık pencere; MASE birincil, WQL + coverage@80
-olasılıksal).
+An end-to-end benchmark on hourly electricity demand: classical statistical models, gradient
+boosting, a from-scratch Transformer (PatchTST) and the **Chronos-Bolt time-series foundation
+model** (zero-shot and fine-tuned), all evaluated under one frozen protocol — plus a shareable
+fine-tuned model in Hugging Face format.
 
-**Sonuç:** Foundation model kazandı. `chronos_bolt_base_ft` MASE **0.9358** (zero-shot base 0.9378)
-ile SeasonalNaive(168) barajının (1.1130) %16 altında — hiçbir klasik model ve sıfırdan eğitilen
-PatchTST (1.7116) barajı geçemedi. Tam tablo: `outputs/metrics/leaderboard.csv`.
+**Dataset:** Monash Time Series Forecasting Repository, `electricity_hourly` — 321 hourly series
+of electricity consumption (kW), 2012–2014 (an aggregated version of UCI
+*ElectricityLoadDiagrams20112014*). 26,304 timestamps per series, complete and equal-length.
 
-## Dizin
+## Results
 
-| Yol | İçerik |
+Every model forecasts the next 168 hours (one week) for all 321 series jointly, over 5
+non-overlapping rolling-origin windows. Point accuracy: **MASE** (seasonal m=24, primary),
+sMAPE alongside. Probabilistic quality: **Weighted Quantile Loss** over nine quantiles (q10–q90)
+and 80%-interval coverage. The bar to beat: **repeat last week** (seasonal naive, m=168).
+
+| model | MASE | sMAPE | WQL | coverage@80 | vs. bar |
+|---|---|---|---|---|---|
+| **chronos_bolt_base_ft** | **0.9358** | 10.83 | **0.0896** | 0.701 | **−15.9%** |
+| chronos_bolt_base (zero-shot) | 0.9378 | 10.68 | 0.0900 | 0.712 | −15.7% |
+| chronos_bolt_small (zero-shot) | 0.9754 | 11.11 | 0.0920 | 0.710 | −12.4% |
+| seasonal_naive_168 *(bar)* | 1.1130 | 11.71 | 0.1279 | 0.095 | — |
+| lgbm_global | 1.2073 | 14.40 | 0.2828 | 0.974 | +8.5% |
+| mstl | 1.2984 | 17.01 | 0.1398 | 0.884 | +16.7% |
+| seasonal_naive_24 | 1.2993 | 14.33 | 0.1527 | 0.045 | +16.7% |
+| auto_ets | 1.3988 | 17.40 | 0.2335 | 0.808 | +25.7% |
+| patchtst | 1.7116 | 20.10 | 0.1517 | 0.721 | +53.8% |
+| auto_theta | 1.7528 | 19.93 | 0.2337 | 0.956 | +57.5% |
+
+Key findings (full statistics and interpretation in [`outputs/REPORT.md`](outputs/REPORT.md)):
+
+- **Only the foundation-model family clears the seasonal-naive bar.** All three Chronos-Bolt
+  variants reach MASE < 1; no classical model, global LightGBM or from-scratch Transformer does.
+  The probabilistic gap is even larger: Chronos WQL (~0.090) is ~36% below the best
+  well-calibrated classical alternative (MSTL, 0.140).
+- **Chronos wins broadly, not on average tricks:** it beats the seasonal naive on 78% of all
+  series×window pairs, uniformly across small/mid/large-scale series, and leads in every one of
+  the five test windows.
+- **Fine-tuning matches zero-shot on typical weeks and pays off exactly on the hardest week.**
+  On the anomalous Christmas window its MASE improves from 1.317 to 1.282, better on 58% of the
+  321 series (sign test p≈0.002) — robustness where forecasts matter most. This rests on the
+  single holiday episode present in the test period.
+- **Calibration caveat:** Chronos 80% intervals cover ~70–71% — slightly narrow. Apply a conformal
+  correction if guaranteed coverage is required.
+
+## Repository contents
+
+| Path | Contents |
 |---|---|
-| `energy_forecasting_foundation_models.ipynb` | **Final notebook** — çalıştırılmış, çıktılı; tüm pipeline'ı tek başına yeniden üretir (Colab GPU, *Run all*) |
-| `energy_forecasting_eda.ipynb` | **EDA notebook'u** — benchmark'taki her tasarım kararının veri temeli; bağımsızdır, veriyi Zenodo'dan kendisi indirir (Colab, GPU gerekmez) |
-| `data/` | Girdi veri seti: ham `electricity_hourly_dataset.tsf` + notebook'un `CUSTOM_DATA` ile doğrudan okuyabileceği `electricity_hourly_long.parquet` (`unique_id, ds, y`) |
-| `outputs/` | Final çıktılar: `REPORT.md` (**model karşılaştırma istatistikleri ve yorumları**), `metrics/` (leaderboard + model başına tablolar), `forecasts/` (kantil tahminleri, parquet), `models/` (Colab'de eğitilmiş final modeller — `chronos_bolt_base_ft/` HF'ye yüklenecek paylaşılabilir model: safetensors bf16 + model kartı), `train_logs/`, `run_meta.json` |
-| `archive/` | Proje tarihçesi: geliştirme notebook'ları (EDA → harness → baseline'lar → PatchTST), Colab pipeline araçları, eski koşu sonuçları, ROADMAP, ham çıktı zip'i |
+| `energy_forecasting_foundation_models.ipynb` | **Benchmark notebook** (executed, with outputs) — reproduces the entire pipeline in one run: data download, evaluation protocol, all 10 models, leaderboard, and the shareable fine-tuned model |
+| `energy_forecasting_eda.ipynb` | **EDA notebook** — the data analysis behind every design decision in the benchmark (scale heterogeneity, seasonalities, anomalies, cross-series structure); standalone, CPU-only |
+| `data/` | Input dataset: raw `electricity_hourly_dataset.tsf` + `electricity_hourly_long.parquet` in the `unique_id, ds, y` schema the notebook's `CUSTOM_DATA` input accepts |
+| `outputs/REPORT.md` | Model-comparison statistics and interpretation |
+| `outputs/metrics/` | `leaderboard.csv` + per-model metric tables (overall, per window, per series×window) |
+| `outputs/forecasts/` | Every model's quantile forecasts in one tidy parquet schema |
+| `outputs/models/` | Trained final models. `chronos_bolt_base_ft/` is the **shareable model**: bf16 safetensors (410 MB) + config + model card, loadable with one `from_pretrained` call |
+| `outputs/train_logs/`, `outputs/run_meta.json` | Training/validation curves and the run's environment record (A100, library versions, stop steps) |
+| `archive/` | Superseded working files (not tracked) |
 
-## Yeniden üretme
+## Reproducing
 
-Notebook'u Colab'da (GPU, tercihen A100) açıp *Run all* — veri Zenodo'dan kendiliğinden iner,
-~1,5–2 saatte 10 satırlık leaderboard'u ve paylaşılabilir modeli yeniden üretir. Başka bir veri
-setiyle koşmak için config hücresinde `CUSTOM_DATA`'ya `unique_id, ds, y` kolonlu CSV/Parquet
-gösterin (örn. `data/electricity_hourly_long.parquet` bu formattadır).
+Open the benchmark notebook in Colab (GPU runtime, A100 recommended) and *Run all* — the dataset
+downloads itself from Zenodo; ~1.5–2 hours end-to-end regenerates the leaderboard and the
+shareable model. The EDA notebook runs on any runtime (CPU is fine) in a few minutes.
 
-## Yayın
+**Using your own data:** point `CUSTOM_DATA` in the benchmark notebook's configuration cell at any
+CSV/Parquet with columns `unique_id, ds, y` on a regular time grid (e.g.
+`data/electricity_hourly_long.parquet` is already in this format). Every model, metric and plot
+adapts automatically.
 
-- **Model → Hugging Face:** `outputs/models/chronos_bolt_base_ft/` klasörünü olduğu gibi yükleyin
-  (410 MB bf16 safetensors + config + model kartı; kart, benchmark sayılarını ve kullanım kodunu içerir).
-- **Notebook → Kaggle:** kökteki çalıştırılmış benchmark `.ipynb`'sini import edin; EDA
-  notebook'u da ayrı bir Kaggle notebook'u olarak yüklenebilir (anlatı sırası: önce EDA, sonra benchmark).
+## The shareable model
+
+`outputs/models/chronos_bolt_base_ft/` — `amazon/chronos-bolt-base` fine-tuned on this dataset.
+Feed it the most recent history of any hourly demand-like series (up to 2048 points, no
+covariates needed); it returns nine-quantile probabilistic forecasts for the next 64 steps
+(longer horizons by rolling). The model card inside the folder carries the benchmark numbers,
+usage code and limitations. Publish by uploading the folder as-is to the Hugging Face Hub.
+
+## Data source
+
+Godahewa et al., *Monash Time Series Forecasting Archive* (NeurIPS 2021) —
+[`electricity_hourly`](https://zenodo.org/records/4656140), derived from UCI
+ElectricityLoadDiagrams20112014.
