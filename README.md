@@ -5,6 +5,8 @@ boosting, a from-scratch Transformer (PatchTST) and the **Chronos-Bolt time-seri
 model** (zero-shot and fine-tuned), all evaluated under one frozen protocol — plus a shareable
 fine-tuned model in Hugging Face format.
 
+**Published model:** [`mskayacioglu/chronos-bolt-base-monash-electricity-hourly`](https://huggingface.co/mskayacioglu/chronos-bolt-base-monash-electricity-hourly)
+
 **Dataset:** Monash Time Series Forecasting Repository, `electricity_hourly` — 321 hourly series
 of electricity consumption (kW), 2012–2014 (an aggregated version of UCI
 *ElectricityLoadDiagrams20112014*). 26,304 timestamps per series, complete and equal-length.
@@ -51,12 +53,13 @@ Key findings (full statistics and interpretation in [`outputs/REPORT.md`](output
 |---|---|
 | `energy_forecasting_foundation_models.ipynb` | **Benchmark notebook** (executed, with outputs) — reproduces the entire pipeline in one run: data download, evaluation protocol, all 10 models, leaderboard, and the shareable fine-tuned model |
 | `energy_forecasting_eda.ipynb` | **EDA notebook** — the data analysis behind every design decision in the benchmark (scale heterogeneity, seasonalities, anomalies, cross-series structure); standalone, CPU-only |
-| `data/` | Input dataset: raw `electricity_hourly_dataset.tsf` + `electricity_hourly_long.parquet` in the `unique_id, ds, y` schema the notebook's `CUSTOM_DATA` input accepts |
+| `data/` | Versioned input dataset: raw `electricity_hourly_dataset.tsf`. The derived `electricity_hourly_long.parquet` is regenerable/local and intentionally not tracked |
 | `outputs/REPORT.md` | Model-comparison statistics and interpretation |
 | `outputs/metrics/` | `leaderboard.csv` + per-model metric tables (overall, per window, per series×window) |
-| `outputs/forecasts/` | Every model's quantile forecasts in one tidy parquet schema |
-| `outputs/models/` | Trained final models. `chronos_bolt_base_ft/` is the **shareable model**: bf16 safetensors (410 MB) + config + model card, loadable with one `from_pretrained` call |
-| `outputs/train_logs/`, `outputs/run_meta.json` | Training/validation curves and the run's environment record (A100, library versions, stop steps) |
+| `outputs/forecasts/` | Generated quantile forecast parquet files; intentionally not tracked because they are large and reproducible |
+| `outputs/models/` | Generated model artifacts; intentionally not tracked. The final fine-tuned model is published on Hugging Face |
+| `outputs/train_logs/` | Generated training/validation curves; intentionally not tracked |
+| `outputs/run_meta.json` | Tracked environment record for the benchmark run (A100, library versions, stop steps) |
 | `archive/` | Superseded working files (not tracked) |
 
 ## Reproducing
@@ -66,20 +69,47 @@ downloads itself from Zenodo; ~1.5–2 hours end-to-end regenerates the leaderbo
 shareable model. The EDA notebook runs on any runtime (CPU is fine) in a few minutes.
 
 **Using your own data:** point `CUSTOM_DATA` in the benchmark notebook's configuration cell at any
-CSV/Parquet with columns `unique_id, ds, y` on a regular time grid (e.g.
-`data/electricity_hourly_long.parquet` is already in this format). Every model, metric and plot
-adapts automatically.
+CSV/Parquet with columns `unique_id, ds, y` on a regular time grid. The notebook can regenerate
+`data/electricity_hourly_long.parquet` locally in this schema from the raw `.tsf` file. Every
+model, metric and plot adapts automatically.
 
-## The shareable model
+## Published model
 
-`outputs/models/chronos_bolt_base_ft/` — `amazon/chronos-bolt-base` fine-tuned on this dataset.
+The final fine-tuned model is published at
+[`mskayacioglu/chronos-bolt-base-monash-electricity-hourly`](https://huggingface.co/mskayacioglu/chronos-bolt-base-monash-electricity-hourly).
+It is `amazon/chronos-bolt-base` fine-tuned on the Monash `electricity_hourly` dataset.
+
 Feed it the most recent history of any hourly demand-like series (up to 2048 points, no
 covariates needed); it returns nine-quantile probabilistic forecasts for the next 64 steps
-(longer horizons by rolling). The model card inside the folder carries the benchmark numbers,
-usage code and limitations. Publish by uploading the folder as-is to the Hugging Face Hub.
+(longer horizons by rolling). The Hugging Face model card carries the benchmark numbers, usage
+code, intended use, limitations and citations.
+
+Install the inference package with `pip install chronos-forecasting`.
+
+```python
+import torch
+from chronos import BaseChronosPipeline
+
+pipe = BaseChronosPipeline.from_pretrained(
+    "mskayacioglu/chronos-bolt-base-monash-electricity-hourly",
+    device_map="cuda",
+    dtype=torch.bfloat16,
+)
+```
 
 ## Data source
 
 Godahewa et al., *Monash Time Series Forecasting Archive* (NeurIPS 2021) —
 [`electricity_hourly`](https://zenodo.org/records/4656140), derived from UCI
 ElectricityLoadDiagrams20112014.
+
+## References
+
+- Chronos / Chronos-Bolt base model: [Chronos: Learning the Language of Time Series](https://arxiv.org/abs/2403.07815)
+- Dataset archive paper: [Monash Time Series Forecasting Archive](https://arxiv.org/abs/2105.06643)
+- Dataset archive: [`electricity_hourly` on Zenodo](https://zenodo.org/records/4656140)
+
+## License
+
+This repository's code and documentation are released under the Apache License 2.0. The source
+dataset and base model remain subject to their upstream terms.
