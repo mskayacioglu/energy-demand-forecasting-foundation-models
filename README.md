@@ -7,6 +7,8 @@ fine-tuned model in Hugging Face format.
 
 **Published model:** [`mskayacioglu/chronos-bolt-base-monash-electricity-hourly`](https://huggingface.co/mskayacioglu/chronos-bolt-base-monash-electricity-hourly)
 
+**Kaggle notebooks:** [EDA](https://www.kaggle.com/code/mskayacioglu/energy-demand-forecasting-eda) · [Benchmark](https://www.kaggle.com/code/mskayacioglu/energy-demand-forecasting-with-foundation-models)
+
 **Dataset:** Monash Time Series Forecasting Repository, `electricity_hourly` — 321 hourly series
 of electricity consumption (kW), 2012–2014 (an aggregated version of UCI
 *ElectricityLoadDiagrams20112014*). 26,304 timestamps per series, complete and equal-length.
@@ -67,6 +69,11 @@ Key findings (full statistics and interpretation in [`outputs/REPORT.md`](output
 Open the benchmark notebook in Colab (GPU runtime, A100 recommended) and *Run all* — the dataset
 downloads itself from Zenodo; ~1.5–2 hours end-to-end regenerates the leaderboard and the
 shareable model. The EDA notebook runs on any runtime (CPU is fine) in a few minutes.
+
+The notebooks are also published on Kaggle:
+
+- [Energy Demand Forecasting EDA](https://www.kaggle.com/code/mskayacioglu/energy-demand-forecasting-eda)
+- [Energy Demand Forecasting with Foundation Models](https://www.kaggle.com/code/mskayacioglu/energy-demand-forecasting-with-foundation-models)
 
 **Using your own data:** point `CUSTOM_DATA` in the benchmark notebook's configuration cell at any
 CSV/Parquet with columns `unique_id, ds, y` on a regular time grid. The notebook can regenerate

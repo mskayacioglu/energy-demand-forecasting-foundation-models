@@ -34,3 +34,6 @@ data/*.parquet
 
 # --- Local scratch dirs the standalone notebooks create when run from the repo root ---
 eda_outputs/
+
+# --- Local Kaggle CLI upload staging ---
+kaggle_upload/
