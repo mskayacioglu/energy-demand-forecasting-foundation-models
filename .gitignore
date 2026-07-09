@@ -21,24 +21,16 @@ dist/
 .DS_Store
 Thumbs.db
 
-# --- Experiment tracking / logs ---
-mlruns/
-wandb/
-outputs/
-*.log
+# --- Local history of superseded artifacts (zips, old runs, project scaffolding) ---
+archive/
 
-# --- Derived / regenerable data artifacts (raw .tsf is versioned) ---
-data/interim/*
-!data/interim/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
+# --- Final outputs: metric tables + run metadata are versioned; heavy binaries are not ---
+outputs/forecasts/
+outputs/models/
+outputs/train_logs/
 
-# --- Generated figures ---
-reports/figures/*
-!reports/figures/.gitkeep
+# --- Data: raw .tsf is versioned; the derived long parquet is regenerable from it ---
+data/*.parquet
 
-# --- Model artifacts & regenerable forecasts (metric tables under results/metrics are versioned) ---
-models/*
-!models/.gitkeep
-results/forecasts/*
-!results/forecasts/.gitkeep
+# --- Local scratch dirs the standalone notebooks create when run from the repo root ---
+eda_outputs/

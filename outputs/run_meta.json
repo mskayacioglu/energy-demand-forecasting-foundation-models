@@ -1,0 +1,39 @@
+{
+  "device": "NVIDIA A100-SXM4-40GB",
+  "torch": "2.11.0+cu128",
+  "numpy": "2.0.2",
+  "pandas": "2.2.2",
+  "statsforecast": "2.0.3",
+  "mlforecast": "1.0.31",
+  "lightgbm": "4.6.0",
+  "neuralforecast": "3.1.9",
+  "chronos-forecasting": "1.5.3",
+  "dataset": "monash_electricity_hourly",
+  "patchtst_stop_steps": [
+    1800,
+    2500,
+    1600,
+    2300,
+    2000
+  ],
+  "chronos_ft_stop_steps": [
+    500,
+    350,
+    650,
+    500,
+    500
+  ],
+  "chronos_ft_final_steps": 400,
+  "models_run": [
+    "auto_ets",
+    "auto_theta",
+    "chronos_bolt_base",
+    "chronos_bolt_base_ft",
+    "chronos_bolt_small",
+    "lgbm_global",
+    "mstl",
+    "patchtst",
+    "seasonal_naive_168",
+    "seasonal_naive_24"
+  ]
+}
